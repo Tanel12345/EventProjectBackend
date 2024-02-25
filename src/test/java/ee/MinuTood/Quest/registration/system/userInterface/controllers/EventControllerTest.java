@@ -176,7 +176,7 @@ public class EventControllerTest {
 
         //Pärib andmebaasist esimese ürituse
         EventResponseDto eventDetails = restTemplate.getForObject(
-                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                "http://localhost:" + port + "/api/events/getEventDetailsById/1",
                 EventResponseDto.class);
         Long initialAttendeesCount = eventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv
 
@@ -211,7 +211,7 @@ public class EventControllerTest {
 
         //Pärib andmebaasist uuesti sama ürituse
         EventResponseDto neweventDetails = restTemplate.getForObject(
-                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                "http://localhost:" + port + "/api/events/getEventDetailsById/1",
                 EventResponseDto.class);
         Long updatedAttendeesCount = neweventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv nüüd
         // Eeldame et osavõtjaid on ühe võrra rohkem
@@ -231,7 +231,7 @@ public class EventControllerTest {
 
         //Pärib andmebaasist esimese ürituse
         EventResponseDto eventDetails = restTemplate.getForObject(
-                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                "http://localhost:" + port + "/api/events/getEventDetailsById/1",
                 EventResponseDto.class);
         Long initialAttendeesCount = eventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv
 
@@ -266,13 +266,59 @@ public class EventControllerTest {
 
         //Pärib andmebaasist uuesti sama ürituse
         EventResponseDto neweventDetails = restTemplate.getForObject(
-                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                "http://localhost:" + port + "/api/events/getEventDetailsById/1",
                 EventResponseDto.class);
         Long updatedAttendeesCount = neweventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv nüüd
         // Eeldame et osavõtjaid on ühe võrra rohkem
 
         assertEquals(initialAttendeesCount + 1, updatedAttendeesCount);
 
+    }
+    @Test
+    public void testGetEventDetails() throws JsonProcessingException {
+        // Eeldame et event numbriga 1 asub andmebaasis
+        Long eventId = 1L;
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "http://localhost:" + port + "/api/events/getEventDetailsById/" + eventId,
+                String.class
+        );
+
+        // Kontrollime vastuse koodi
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Deserialiseme jsoni EventResponseDtoks
+        EventResponseDto eventFromResponse = objectMapper.readValue(
+                response.getBody(),
+                EventResponseDto.class
+        );
+
+        // Tõmbame sama id ga evendi otse andmebaasist
+        Optional<Event> eventFromDatabase = eventRepository.findById(eventId);
+
+        // Eeldame et event on olemas
+        assertThat(eventFromDatabase).isPresent();
+
+        // Kui on olemas siis võrdleme kas päringuvastusena saadud event on võrdne andmebaasist otse tõmmatuga.
+        eventFromDatabase.ifPresent(event -> {
+            assertThat(eventFromResponse.getId()).isEqualTo(event.getId());
+
+        });
+    }
+    @Test
+    public void testDeleteEventById() {
+        // Assuming eventId is an existing event ID
+        Long eventId = 4L;
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                "http://localhost:" + port + "/api/events/deleteEventById/" + eventId,
+                HttpMethod.DELETE,
+                null,
+                String.class);
+
+
+        assertThat(response.getStatusCodeValue()).isEqualTo(200);
+        assertThat(response.getBody()).isEqualTo("Üritus kustutatud edukalt");
     }
 
 }

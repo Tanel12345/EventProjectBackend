@@ -39,6 +39,8 @@ public class EventController {
         this.eventService = eventService;
     }
 
+
+
     @PostMapping("/createEventWithoutAttendees")
     public ResponseEntity<?> createEventWithoutAttendees(@RequestBody @Valid EventRequestDto eventRequestDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -124,7 +126,7 @@ public class EventController {
         }
 
     @PostMapping("/addLegalAttendeeToEventId/{eventId}")
-    public ResponseEntity<?> addIndividualAttendeeToEventId(@PathVariable Long eventId, @Valid @RequestBody LegalAttendeeRequestDto legalAttendeeRequestDto, BindingResult bindingResult) {
+    public ResponseEntity<?> addLegalAttendeeToEventId(@PathVariable Long eventId, @Valid @RequestBody LegalAttendeeRequestDto legalAttendeeRequestDto, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
             // Logib dto klassi valideerimise errorid ja tagastab vastava response entity
@@ -161,7 +163,7 @@ public class EventController {
 
 
     @GetMapping("/getEventDetails/{eventId}")
-    public ResponseEntity<?> getEventDetails(@PathVariable Long eventId) {
+    public ResponseEntity<?> getEventDetailsById(@PathVariable Long eventId) {
 
         try{
         EventResponseDto eventResponseDto = eventService.getEventById(eventId);
@@ -172,6 +174,20 @@ public class EventController {
         }
 
 
+    }
+
+    @DeleteMapping("/deleteEventById/{eventId}")
+    public ResponseEntity<String> deleteEventById(@PathVariable Long eventId) {
+        try {
+            eventService.deleteEvent(eventId);
+            return ResponseEntity.ok("Üritus kustutatud edukalt");
+        } catch (EntityNotFoundException e) {
+            logger.error("Event not found with ID: " + eventId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("An error occurred while deleting event with ID: " + eventId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error");
+        }
     }
 
 

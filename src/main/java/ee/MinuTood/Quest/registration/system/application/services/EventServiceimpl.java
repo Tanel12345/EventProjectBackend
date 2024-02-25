@@ -99,6 +99,8 @@ public class EventServiceimpl implements EventService {
         return eventResponseDto;
     }
 
+
+
     @Transactional
     public EventResponseDto getEventById(Long eventId) {
         Event event = eventRepository.findById(eventId).orElseThrow(() ->new EntityNotFoundException("Üritust ei leitud ID: " + eventId));
@@ -109,7 +111,7 @@ public class EventServiceimpl implements EventService {
     @Transactional
     public IndividualAttendee addIndividualAttendeeToEventId(Long eventId, IndividualAttendeeRequestDto individualAttendeeRequestDto) {
         Event existingEvent = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EntityNotFoundException("Event not found with ID: " + eventId));
+                .orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud ID: " + eventId));
 
         try {
             IndividualAttendee individualAttendee = modelMapper.map(individualAttendeeRequestDto, IndividualAttendee.class);
@@ -151,10 +153,10 @@ public class EventServiceimpl implements EventService {
 
 
 //
-//    @Transactional
-//    public void deleteEvent(Long eventId) {
-//        eventRepository.deleteById(eventId);
-//    }
+    @Transactional
+    public void deleteEvent(Long eventId) {
+        eventRepository.deleteById(eventId);
+    }
 //
 //    @Transactional
 //    public void addIndividualAttendeeToEvent(Long eventId, IndividualAttendeeRequestDto individualAttendeeDto) {

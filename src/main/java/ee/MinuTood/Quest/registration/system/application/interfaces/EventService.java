@@ -17,4 +17,5 @@ public interface EventService {
     IndividualAttendee addIndividualAttendeeToEventId(Long eventId, IndividualAttendeeRequestDto individualAttendeeRequestDto);
     LegalAttendee addLegalAttendeeToEventId(Long eventId, LegalAttendeeRequestDto legalAttendeeRequestDto);
     EventResponseDto getEventById(Long eventId);
+    void deleteEvent(Long eventId);
 }
