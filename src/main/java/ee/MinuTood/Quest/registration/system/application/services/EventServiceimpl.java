@@ -1,14 +1,21 @@
 package ee.MinuTood.Quest.registration.system.application.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ee.MinuTood.Quest.registration.system.application.interfaces.EventService;
 import ee.MinuTood.Quest.registration.system.domain.event.Event;
+import ee.MinuTood.Quest.registration.system.domain.event.entities.IndividualAttendee;
+import ee.MinuTood.Quest.registration.system.domain.event.entities.LegalAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.repositories.EventRepository;
 import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventRequestDto;
 import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventResponseDto;
+import ee.MinuTood.Quest.registration.system.userInterface.dtos.IndividualAttendeeRequestDto;
+import ee.MinuTood.Quest.registration.system.userInterface.dtos.LegalAttendeeRequestDto;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,6 +35,7 @@ public class EventServiceimpl implements EventService {
 
     private EventRepository eventRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(EventServiceimpl.class);
 
 
     @Transactional
@@ -91,23 +99,57 @@ public class EventServiceimpl implements EventService {
         return eventResponseDto;
     }
 
-//    @Transactional(readOnly = true)
-//    public EventResponseDto getEventById(Long eventId) {
-//        Event event = eventRepository.findById(eventId).orElse(null);
-//        return mapEntityToDto(event);
-//    }
-//
-//    @Transactional
-//    public EventResponseDto updateEvent(Long eventId, EventRequestDto updatedEventDto) {
-//        Event existingEvent = eventRepository.findById(eventId).orElse(null);
-//        if (existingEvent != null) {
-//            Event updatedEvent = mapDtoToEntity(updatedEventDto);
-//            updatedEvent.setId(eventId);
-//            eventRepository.save(updatedEvent);
-//            return mapEntityToDto(updatedEvent);
-//        }
-//        return null; // Handle appropriately if the event is not found
-//    }
+    @Transactional
+    public EventResponseDto getEventById(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(() ->new EntityNotFoundException("Üritust ei leitud ID: " + eventId));
+        EventResponseDto eventResponseDto = mapSavedEventsToEventResponceDto(event);
+        return eventResponseDto;
+    }
+
+    @Transactional
+    public IndividualAttendee addIndividualAttendeeToEventId(Long eventId, IndividualAttendeeRequestDto individualAttendeeRequestDto) {
+        Event existingEvent = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found with ID: " + eventId));
+
+        try {
+            IndividualAttendee individualAttendee = modelMapper.map(individualAttendeeRequestDto, IndividualAttendee.class);
+            // Set the associated Event
+            individualAttendee.setEvent(existingEvent);
+            existingEvent.addIndividualAttendee(individualAttendee);
+            Event savedEvent = eventRepository.save(existingEvent);
+
+
+            return individualAttendee;
+
+        } catch (Exception e) {
+            // Log other exceptions for debugging purposes
+            logger.error("An error occurred in the service: ", e);
+            throw new ValidationException("Internal Server Error");
+        }
+    }
+    @Transactional
+    public LegalAttendee addLegalAttendeeToEventId(Long eventId, LegalAttendeeRequestDto legalAttendeeRequestDto) {
+        Event existingEvent = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found with ID: " + eventId));
+
+        try {
+            LegalAttendee legalAttendee = modelMapper.map(legalAttendeeRequestDto, LegalAttendee.class);
+            // Set the associated Event
+            legalAttendee.setEvent(existingEvent);
+            existingEvent.addLegalAttendee(legalAttendee);
+            Event savedEvent = eventRepository.save(existingEvent);
+
+
+            return legalAttendee;
+
+        } catch (Exception e) {
+            // Log other exceptions for debugging purposes
+            logger.error("An error occurred in the service: ", e);
+            throw new ValidationException("Internal Server Error");
+        }
+    }
+
+
 //
 //    @Transactional
 //    public void deleteEvent(Long eventId) {

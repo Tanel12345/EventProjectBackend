@@ -6,10 +6,15 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import ee.MinuTood.Quest.registration.system.domain.event.Event;
+import ee.MinuTood.Quest.registration.system.domain.event.entities.IndividualAttendee;
+import ee.MinuTood.Quest.registration.system.domain.event.entities.LegalAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.repositories.EventRepository;
 import ee.MinuTood.Quest.registration.system.domain.event.valueobjects.LocationAddress;
 import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventRequestDto;
 import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventResponseDto;
+import ee.MinuTood.Quest.registration.system.userInterface.dtos.IndividualAttendeeRequestDto;
+import ee.MinuTood.Quest.registration.system.userInterface.dtos.LegalAttendeeRequestDto;
+import ee.MinuTood.Quest.registration.system.userInterface.enums.PaymentMethod;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,9 +24,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -30,6 +33,8 @@ import java.util.Optional;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Testi klass Event agregaadiga seotud tegevuste testimiseks
@@ -160,5 +165,114 @@ public class EventControllerTest {
         assertThat(eventsFromResponse).hasSize((int) eventsCountInDatabase);
     }
 
+    /**
+     * Test kontrollib kas andmebaasi lisandus eraisikust osaleja.
+     * Test kasutab RestTemplate, Springi pakutavat http päringuid teostavat raamistikku
+     *
+     * @throws JsonProcessingException
+     */
+    @Test
+    public void testIndividualAttendeeToEventId() throws JsonProcessingException {
+
+        //Pärib andmebaasist esimese ürituse
+        EventResponseDto eventDetails = restTemplate.getForObject(
+                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                EventResponseDto.class);
+        Long initialAttendeesCount = eventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv
+
+        //Lisab üritusele ühe eraisikust osaleja
+
+        IndividualAttendeeRequestDto individualAttendeeRequestDto = new IndividualAttendeeRequestDto();
+        individualAttendeeRequestDto.setFirstName("Tanel");
+        individualAttendeeRequestDto.setLastName("Sepp");
+        individualAttendeeRequestDto.setPersonalCode("12321232123");
+        individualAttendeeRequestDto.setPaymentMethod(PaymentMethod.CASH);
+
+        // loome päringule headerid
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Loome HttpEntity koos headerite ja bodyga
+        HttpEntity<IndividualAttendeeRequestDto> requestEntity = new HttpEntity<>(individualAttendeeRequestDto, headers);
+
+        // Teostame Post päringu
+        ResponseEntity<IndividualAttendee> response = restTemplate.exchange(
+                "http://localhost:" + port + "/api/events/addIndividualAttendeeToEventId/1",
+                HttpMethod.POST,
+                requestEntity,
+                IndividualAttendee.class
+
+        );
+
+        // Eeldame et vastuse staatus on 201 ja body on olemas.
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+
+        //Pärib andmebaasist uuesti sama ürituse
+        EventResponseDto neweventDetails = restTemplate.getForObject(
+                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                EventResponseDto.class);
+        Long updatedAttendeesCount = neweventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv nüüd
+        // Eeldame et osavõtjaid on ühe võrra rohkem
+
+        assertEquals(initialAttendeesCount + 1, updatedAttendeesCount);
+
+    }
+
+    /**
+     * Test kontrollib kas andmebaasi lisandus ettevõttest osaleja.
+     * Test kasutab RestTemplate, Springi pakutavat http päringuid teostavat raamistikku
+     *
+     * @throws JsonProcessingException
+     */
+    @Test
+    public void testLegalAttendeeToEventId() throws JsonProcessingException {
+
+        //Pärib andmebaasist esimese ürituse
+        EventResponseDto eventDetails = restTemplate.getForObject(
+                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                EventResponseDto.class);
+        Long initialAttendeesCount = eventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv
+
+        //Lisab üritusele ühe eraisikust osaleja
+
+        LegalAttendeeRequestDto legalAttendeeRequestDto = new LegalAttendeeRequestDto();
+        legalAttendeeRequestDto.setCompanyName("Tanel");
+        legalAttendeeRequestDto.setRegistrationCode(123212312L);
+        legalAttendeeRequestDto.setPaymentMethod(PaymentMethod.BANKTRANSFER);
+        legalAttendeeRequestDto.setNumberOfParticipant(12L);
+
+        // loome Päringule headerid
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Loome HttpEntity koos headerite ja bodyga
+        HttpEntity<LegalAttendeeRequestDto> requestEntity = new HttpEntity<>(legalAttendeeRequestDto, headers);
+
+        // Teostame Post päringu
+        ResponseEntity<LegalAttendee> response = restTemplate.exchange(
+                "http://localhost:" + port + "/api/events/addLegalAttendeeToEventId/1",
+                HttpMethod.POST,
+                requestEntity,
+                LegalAttendee.class
+
+        );
+
+        // Eeldame et vastuse staatus on 201 ja body on olemas.
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+
+
+        //Pärib andmebaasist uuesti sama ürituse
+        EventResponseDto neweventDetails = restTemplate.getForObject(
+                "http://localhost:" + port + "/api/events/getEventDetails/1",
+                EventResponseDto.class);
+        Long updatedAttendeesCount = neweventDetails.getAttendeesCount(); //Esimesest üritusest osavõtjate arv nüüd
+        // Eeldame et osavõtjaid on ühe võrra rohkem
+
+        assertEquals(initialAttendeesCount + 1, updatedAttendeesCount);
+
+    }
 
 }

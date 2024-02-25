@@ -1,5 +1,6 @@
 package ee.MinuTood.Quest.registration.system.domain.event;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.IndividualAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.LegalAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.valueobjects.LocationAddress;
@@ -30,13 +31,14 @@ public class Event {
     private LocationAddress locationAddress;
     @Column(length = 1000) // Change 1000 to your desired length
     private String additionalInfo;
+    @JsonIgnoreProperties({"individualAttendees"}) //ignoreerib antud fieldi ennem serialiseerimist uuesti jsoniks
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
     private List<IndividualAttendee> individualAttendees = new ArrayList<>();
-
+    @JsonIgnoreProperties({"legalAttendees"}) //ignoreerib antud fieldi ennem serialiseerimist uuesti jsoniks
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
     private List<LegalAttendee> legalAttendees = new ArrayList<>();
 
-    // Getterid, setterid ja muud meetodid
+
 
     public void addIndividualAttendee(IndividualAttendee individualAttendee) {
         // Lisa eraisikust osavõtja olemasolevale üritusele
