@@ -1,6 +1,7 @@
 package ee.MinuTood.Quest.registration.system.userInterface.controllers;
 
 import ee.MinuTood.Quest.registration.system.application.interfaces.EventService;
+import ee.MinuTood.Quest.registration.system.domain.event.Event;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.IndividualAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.LegalAttendee;
 import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventRequestDto;
@@ -40,7 +41,6 @@ public class EventController {
     }
 
 
-
     @PostMapping("/createEventWithoutAttendees")
     public ResponseEntity<?> createEventWithoutAttendees(@RequestBody @Valid EventRequestDto eventRequestDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
@@ -48,7 +48,7 @@ public class EventController {
             bindingResult.getFieldErrors().forEach(error ->
                     logger.error("Validation error in field: {}" + error.getField() + ": " + error.getDefaultMessage()));
 
-            return new ResponseEntity<>(bindingResult.getFieldError().getDefaultMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);
         }
         try {
             // Lisab DTO servicele, service teostab ülejäänud toimingud.
@@ -90,6 +90,7 @@ public class EventController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @PostMapping("/addIndividualAttendeeToEventId/{eventId}")
     public ResponseEntity<?> addIndividualAttendeeToEventId(@PathVariable Long eventId, @Valid @RequestBody IndividualAttendeeRequestDto individualAttendeeRequestDto, BindingResult bindingResult) {
 
@@ -98,32 +99,33 @@ public class EventController {
             bindingResult.getAllErrors().forEach(error ->
                     logger.error("Validation error in field: {} - {}", error.getObjectName(), error.getDefaultMessage()));
 
-            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);}
-
-            try {
-                // Lisab DTO servicele, service teostab ülejäänud toimingud.
-                IndividualAttendee individualAttendee = eventService.addIndividualAttendeeToEventId(eventId, individualAttendeeRequestDto);
-
-                // Tagastab 201 Created response eduka toimingu puhul
-                return new ResponseEntity<>(individualAttendee, HttpStatus.CREATED);
-
-                //Püüab ja händlib exceptioni kui eventi ei leita
-            } catch (EntityNotFoundException e) {
-                logger.error("Entity not found: {}", e.getMessage());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-            } catch (ValidationException e) {
-                // Logib valideerimise errorid servise levelil ja tagastab
-                logger.error("Validation error in service: ", e.getMessage(), e);
-
-                return ResponseEntity.badRequest().build();
-
-            } catch (Exception e) {
-                // Logib teised võimalikud exceptionid ja tagastab kood 500
-                logger.error("An error occurred: ", e.getMessage(), e);
-
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
+            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);
         }
+
+        try {
+            // Lisab DTO servicele, service teostab ülejäänud toimingud.
+            IndividualAttendee individualAttendee = eventService.addIndividualAttendeeToEventId(eventId, individualAttendeeRequestDto);
+
+            // Tagastab 201 Created response eduka toimingu puhul
+            return new ResponseEntity<>(individualAttendee, HttpStatus.CREATED);
+
+            //Püüab ja händlib exceptioni kui eventi ei leita
+        } catch (EntityNotFoundException e) {
+            logger.error("Entity not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (ValidationException e) {
+            // Logib valideerimise errorid servise levelil ja tagastab
+            logger.error("Validation error in service: ", e.getMessage(), e);
+
+            return ResponseEntity.badRequest().build();
+
+        } catch (Exception e) {
+            // Logib teised võimalikud exceptionid ja tagastab kood 500
+            logger.error("An error occurred: ", e.getMessage(), e);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @PostMapping("/addLegalAttendeeToEventId/{eventId}")
     public ResponseEntity<?> addLegalAttendeeToEventId(@PathVariable Long eventId, @Valid @RequestBody LegalAttendeeRequestDto legalAttendeeRequestDto, BindingResult bindingResult) {
@@ -133,7 +135,8 @@ public class EventController {
             bindingResult.getAllErrors().forEach(error ->
                     logger.error("Validation error in field: {} - {}", error.getObjectName(), error.getDefaultMessage()));
 
-            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);}
+            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);
+        }
 
         try {
             // Lisab DTO servicele, service teostab ülejäänud toimingud.
@@ -161,14 +164,27 @@ public class EventController {
     }
 
 
-
     @GetMapping("/getEventDetails/{eventId}")
     public ResponseEntity<?> getEventDetailsById(@PathVariable Long eventId) {
 
-        try{
-        EventResponseDto eventResponseDto = eventService.getEventById(eventId);
-        return ResponseEntity.ok(eventResponseDto);}
-        catch(EntityNotFoundException e){
+        try {
+            EventResponseDto eventResponseDto = eventService.getEventById(eventId);
+            return ResponseEntity.ok(eventResponseDto);
+        } catch (EntityNotFoundException e) {
+            logger.error("Üritust ei leitud ID: " + eventId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+
+
+    }
+
+    @GetMapping("/getEventDetailsWithAttendeesById/{eventId}")
+    public ResponseEntity<?> getEventDetailsWithAttendeesById(@PathVariable Long eventId) {
+
+        try {
+            Event eventResponse = eventService.getEventByIdWithAttendees(eventId);
+            return ResponseEntity.ok(eventResponse);
+        } catch (EntityNotFoundException e) {
             logger.error("Üritust ei leitud ID: " + eventId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -190,6 +206,71 @@ public class EventController {
         }
     }
 
+    @DeleteMapping("/events/{eventId}/individualAttendees/{attendeeId}")
+    public ResponseEntity<String> deleteIndividualAttendeeFromEvent(
+            @PathVariable Long eventId,
+            @PathVariable Long attendeeId) {
+        try {
+            eventService.deleteIndividualAttendeeByIdFromEventId(attendeeId, eventId);
+            return ResponseEntity.ok("Eraisikust Osavõtja kustutati edukalt");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 
+    @DeleteMapping("/events/{eventId}/legalAttendees/{attendeeId}")
+    public ResponseEntity<String> deleteLegalAttendeeFromEvent(
+            @PathVariable Long eventId,
+            @PathVariable Long attendeeId) {
+        try {
+            eventService.deleteLegalAttendeeByIdFromEventId(attendeeId, eventId);
+            return ResponseEntity.ok("Ettevõttest Osavõtja kustutati edukalt");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
 
     }
+
+    @PutMapping("/events/{eventId}/individualAttendees/{attendeeId}")
+    public ResponseEntity<?> updateIndividualAttendeeFromEvent(
+            @PathVariable Long eventId,
+            @PathVariable Long attendeeId, @Valid @RequestBody IndividualAttendeeRequestDto individualAttendeeRequestDto, BindingResult bindingResult) {
+
+        if (bindingResult.hasErrors()) {
+            // Logib valideerimise errorid ja tagastab vastava response entity
+            bindingResult.getFieldErrors().forEach(error ->
+                    logger.error("Validation error in field: {}" + error.getField() + ": " + error.getDefaultMessage()));
+
+            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);
+        }
+        try {
+            eventService.updateIndividualAttendeeByIdFromEventId(attendeeId, eventId, individualAttendeeRequestDto);
+            return ResponseEntity.ok("Eraisikust Osavõtja uuendati edukalt");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+
+    @PutMapping("/events/{eventId}/legalAttendees/{attendeeId}")
+    public ResponseEntity<?> updateLegalAttendeeFromEvent(
+            @PathVariable Long eventId,
+            @PathVariable Long attendeeId, @Valid @RequestBody LegalAttendeeRequestDto legalAttendeeRequestDto, BindingResult bindingResult) {
+
+        if (bindingResult.hasErrors()) {
+            // Logib valideerimise errorid ja tagastab vastava response entity
+            bindingResult.getFieldErrors().forEach(error ->
+                    logger.error("Validation error in field: {}" + error.getField() + ": " + error.getDefaultMessage()));
+
+            return new ResponseEntity<>(bindingResult.getFieldErrors(), HttpStatus.BAD_REQUEST);
+        }
+        try {
+            eventService.updateLegalAttendeeByIdFromEventId(attendeeId, eventId, legalAttendeeRequestDto);
+            return ResponseEntity.ok("Ettevõttest Osavõtja uuendati edukalt");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+
+}

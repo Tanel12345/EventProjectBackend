@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -31,7 +33,7 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class EventServiceimpl implements EventService {
 
-    private  ModelMapper modelMapper;
+    private ModelMapper modelMapper;
 
     private EventRepository eventRepository;
 
@@ -64,14 +66,11 @@ public class EventServiceimpl implements EventService {
 
         return event;
     }
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////
 
 
     @Transactional
     public List<EventResponseDto> getAllEvents() {
-
 
 
         // Perform business logic and save the event
@@ -83,12 +82,11 @@ public class EventServiceimpl implements EventService {
         return eventResponseDtos;
 
 
-
-
     }
-    private EventResponseDto mapSavedEventsToEventResponceDto(Event event){
-      EventResponseDto eventResponseDto = new EventResponseDto();
-      eventResponseDto.setId(event.getId());
+
+    private EventResponseDto mapSavedEventsToEventResponceDto(Event event) {
+        EventResponseDto eventResponseDto = new EventResponseDto();
+        eventResponseDto.setId(event.getId());
         eventResponseDto.setName(event.getName());
         eventResponseDto.setTime(event.getTime());
         eventResponseDto.setLocationAdress(event.getLocationAddress());
@@ -99,14 +97,22 @@ public class EventServiceimpl implements EventService {
         return eventResponseDto;
     }
 
-
+////////////////////////////////////////////////////////
 
     @Transactional
     public EventResponseDto getEventById(Long eventId) {
-        Event event = eventRepository.findById(eventId).orElseThrow(() ->new EntityNotFoundException("Üritust ei leitud ID: " + eventId));
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud ID: " + eventId));
         EventResponseDto eventResponseDto = mapSavedEventsToEventResponceDto(event);
         return eventResponseDto;
     }
+
+    @Transactional
+    public Event getEventByIdWithAttendees(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud ID: " + eventId));
+
+        return event;
+    }
+
 
     @Transactional
     public IndividualAttendee addIndividualAttendeeToEventId(Long eventId, IndividualAttendeeRequestDto individualAttendeeRequestDto) {
@@ -129,6 +135,8 @@ public class EventServiceimpl implements EventService {
             throw new ValidationException("Internal Server Error");
         }
     }
+
+
     @Transactional
     public LegalAttendee addLegalAttendeeToEventId(Long eventId, LegalAttendeeRequestDto legalAttendeeRequestDto) {
         Event existingEvent = eventRepository.findById(eventId)
@@ -152,45 +160,117 @@ public class EventServiceimpl implements EventService {
     }
 
 
-//
     @Transactional
     public void deleteEvent(Long eventId) {
         eventRepository.deleteById(eventId);
     }
-//
-//    @Transactional
-//    public void addIndividualAttendeeToEvent(Long eventId, IndividualAttendeeRequestDto individualAttendeeDto) {
-//        Event event = getEventById(eventId);
-//        if (event != null) {
-//            IndividualAttendee individualAttendee = mapDtoToEntity(individualAttendeeDto);
-//            event.addIndividualAttendee(individualAttendee);
-//            updateEvent(event);
-//        }
-//    }
-//
-//    @Transactional
-//    public void addLegalAttendeeToEvent(Long eventId, LegalAttendeeRequestDto legalAttendeeDto) {
-//        Event event = getEventById(eventId);
-//        if (event != null) {
-//            LegalAttendee legalAttendee = mapDtoToEntity(legalAttendeeDto);
-//            event.addLegalAttendee(legalAttendee);
-//            updateEvent(event);
-//        }
-//    }
-//
-//
-//
-//    private EventResponseDto mapEntityToDto(Event event) {
-//        // Implement the mapping logic from Entity to DTO
-//    }
-//
-//    private IndividualAttendee mapDtoToEntity(IndividualAttendeeRequestDto individualAttendeeDto) {
-//        // Implement the mapping logic from DTO to Entity for IndividualAttendee
-//    }
-//
-//    private LegalAttendee mapDtoToEntity(LegalAttendeeRequestDto legalAttendeeDto) {
-//        // Implement the mapping logic from DTO to Entity for LegalAttendee
-//    }
 
-//
+
+    @Transactional
+    public void deleteIndividualAttendeeByIdFromEventId(Long attendeeId, Long eventId) {
+        Optional<Event> eventOptional = eventRepository.findById(eventId);
+
+        Event event = eventOptional.orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud"));
+
+        boolean isRemoved = event.deleteIndividualAttendeeById(attendeeId);
+
+        if (isRemoved) {
+            eventRepository.save(event);
+        } else {
+            throw new EntityNotFoundException("Sellist osalejat ei leitud");
+        }
+    }
+
+
+    @Transactional
+    public void deleteLegalAttendeeByIdFromEventId(Long attendeeId, Long eventId) {
+        Optional<Event> eventOptional = eventRepository.findById(eventId);
+        Event event = eventOptional.orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud"));
+
+        boolean isRemoved = event.deleteLegalAttendeeById(attendeeId);
+
+        if (isRemoved) {
+            eventRepository.save(event);
+        } else {
+            throw new EntityNotFoundException("Sellist osalejat ei leitud");
+        }
+    }
+
+    //////////////////////////////////////////////////////////////
+
+    @Transactional
+    public void updateIndividualAttendeeByIdFromEventId(Long attendeeId, Long eventId, IndividualAttendeeRequestDto individualAttendeeRequestDto) {
+        Optional<Event> eventOptional = eventRepository.findById(eventId);
+        Event event = eventOptional.orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud"));
+
+        // Kutsub updateIndividualAttendee meetodit Event klassis. Andes kaasa uue uuendatud andmetega IndividualAttendee
+        boolean attendeeUpdated = event.updateIndividualAttendee(buildUpdatedAttendee(attendeeId, individualAttendeeRequestDto));
+
+        if (attendeeUpdated) {
+            // Kui tagastatakse true siis üritus taassalvestatakse
+            eventRepository.save(event);
+
+
+        } else {
+            // Kui osalejat ei litud sellelt ürituselt
+            logger.error("eraisikust osalejat ei leitud sellel üritusel");
+            throw new EntityNotFoundException("eraisikust osalejat ei leitud sellel üritusel");
+        }
+    }
+
+    /**
+     * Abimeetod eelmisele, osaleja uuendamiseks.
+     */
+    private IndividualAttendee buildUpdatedAttendee(Long attendeeId, IndividualAttendeeRequestDto individualAttendeeRequestDto) {
+        IndividualAttendee updatedAttendee = new IndividualAttendee();
+        updatedAttendee.setId(attendeeId);
+        updatedAttendee.setFirstName(individualAttendeeRequestDto.getFirstName());
+        updatedAttendee.setLastName(individualAttendeeRequestDto.getLastName());
+        updatedAttendee.setPersonalCode(individualAttendeeRequestDto.getPersonalCode());
+        updatedAttendee.setPaymentMethod(individualAttendeeRequestDto.getPaymentMethod());
+        updatedAttendee.setAdditionalInfo(individualAttendeeRequestDto.getAdditionalInfo());
+        // Set other fields as needed
+
+        return updatedAttendee;
+    }
+    ////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+
+    @Transactional
+    public void updateLegalAttendeeByIdFromEventId(Long attendeeId, Long eventId, LegalAttendeeRequestDto legalAttendeeRequestDto) {
+        Optional<Event> eventOptional = eventRepository.findById(eventId);
+        Event event = eventOptional.orElseThrow(() -> new EntityNotFoundException("Üritust ei leitud"));
+
+        // Kutsub updateIndividualAttendee meetodit Event klassis. Andes kaasa uue uuendatud andmetega IndividualAttendee
+        boolean attendeeUpdated = event.updateLegalAttendee(buildUpdatedAttendee(attendeeId, legalAttendeeRequestDto));
+
+        if (attendeeUpdated) {
+            // Kui tagastatakse true siis üritus taassalvestatakse
+            eventRepository.save(event);
+
+
+        } else {
+            // Kui osalejat ei litud sellelt ürituselt
+            logger.error("Ettevõttest osalejat ei leitud sellel üritusel");
+            throw new EntityNotFoundException("Ettevõttest osalejat ei leitud sellel üritusel");
+        }
+    }
+
+    /**
+     * Abimeetod eelmisele, osaleja uuendamiseks.
+     */
+    private LegalAttendee buildUpdatedAttendee(Long attendeeId, LegalAttendeeRequestDto legalAttendeeRequestDto) {
+        LegalAttendee updatedAttendee = new LegalAttendee();
+        updatedAttendee.setId(attendeeId);
+        updatedAttendee.setCompanyName(legalAttendeeRequestDto.getCompanyName());
+        updatedAttendee.setRegistrationCode(legalAttendeeRequestDto.getRegistrationCode());
+        updatedAttendee.setNumberOfParticipant(legalAttendeeRequestDto.getNumberOfParticipant());
+        updatedAttendee.setPaymentMethod(legalAttendeeRequestDto.getPaymentMethod());
+        updatedAttendee.setAdditionalInfo(legalAttendeeRequestDto.getAdditionalInfo());
+        // Set other fields as needed
+
+        return updatedAttendee;
+    }
+////////////////////////////////////////////////////////////////////////
+
 }
