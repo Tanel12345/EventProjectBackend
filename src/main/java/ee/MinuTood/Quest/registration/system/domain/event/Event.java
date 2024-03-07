@@ -1,6 +1,5 @@
 package ee.MinuTood.Quest.registration.system.domain.event;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.IndividualAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.LegalAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.valueobjects.LocationAddress;
@@ -10,7 +9,6 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Event agregaat klass
@@ -32,11 +30,11 @@ public class Event {
     private LocationAddress locationAddress;
     @Column(length = 1000) // Lubab tabelisse kuni 1000 täheühikut
     private String additionalInfo;
-    @JsonIgnoreProperties({"individualAttendees"}) //ignoreerib antud fieldi ennem serialiseerimist uuesti jsoniks
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+//    @JsonIgnoreProperties({"individualAttendees"}) //ignoreerib antud fieldi ennem serialiseerimist uuesti jsoniks
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<IndividualAttendee> individualAttendees = new ArrayList<>();
-    @JsonIgnoreProperties({"legalAttendees"}) //ignoreerib antud fieldi ennem serialiseerimist uuesti jsoniks
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+//    @JsonIgnoreProperties({"legalAttendees"}) //ignoreerib antud fieldi ennem serialiseerimist uuesti jsoniks
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LegalAttendee> legalAttendees = new ArrayList<>();
 
 

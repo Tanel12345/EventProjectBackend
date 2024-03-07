@@ -89,7 +89,7 @@ public class EventServiceimpl implements EventService {
         eventResponseDto.setId(event.getId());
         eventResponseDto.setName(event.getName());
         eventResponseDto.setTime(event.getTime());
-        eventResponseDto.setLocationAdress(event.getLocationAddress());
+        eventResponseDto.setLocationAddress(event.getLocationAddress());
         Long individualCount = event.getIndividualAttendees().stream().count();
         Long legalCount = event.getLegalAttendees().stream().count();
         eventResponseDto.setAttendeesCount(individualCount + legalCount);

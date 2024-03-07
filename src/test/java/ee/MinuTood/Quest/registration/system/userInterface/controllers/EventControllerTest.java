@@ -582,17 +582,19 @@ public class EventControllerTest {
      */
     @Test
     public void testUpdateIndividualAttendeeFromEvent() {
-        //Pärib andmebaasist esimese ürituse koos osalejatega
-        Event eventResponse = restTemplate.getForObject(
+        //Pärib andmebaasist esimese ürituse koos esimese olemasoleva osalejaga
+        Event event  = restTemplate.getForObject(
                 "http://localhost:" + port + "/api/events/getEventDetailsWithAttendeesById/1",
                 Event.class);
-        List<IndividualAttendee> individualAttendees = eventResponse.getIndividualAttendees(); // Osalejate list
-        IndividualAttendee individualAttendee = individualAttendees.get(0);
-        Long eventId = eventResponse.getId();
-        Long attendeeId = individualAttendee.getId();
+         //Eraldab sellel üritusel oleva esimese osaleja id
+            List<IndividualAttendee> individualAttendees = event.getIndividualAttendees();
+            IndividualAttendee individualAttendee = individualAttendees.get(0);
+            Long eventId = event.getId();
+            Long attendeeId = individualAttendee.getId();
 
 
-        // Update the individual attendee on the given event
+
+        // Loob uue ja Uuendab osaleja dto objekti andmetega
         IndividualAttendeeRequestDto updatedAttendeeDto = new IndividualAttendeeRequestDto();
         updatedAttendeeDto.setFirstName("Updated Name2");
         updatedAttendeeDto.setLastName("Updated Last");
@@ -610,6 +612,7 @@ public class EventControllerTest {
 
         // Eeldame et vastus on ok 200
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+
 
 
         // Pärib andmebaasist uuesti esimese ürituse koos osalejatega
@@ -637,7 +640,7 @@ public class EventControllerTest {
      */
     @Test
     public void testUpdateLegalAttendeeFromEvent() {
-        //Pärib andmebaasist esimese ürituse koos osalejatega
+        //Pärib andmebaasist esimese ürituse koos esimese olemasoleva osalejaga
         Event eventResponse = restTemplate.getForObject(
                 "http://localhost:" + port + "/api/events/getEventDetailsWithAttendeesById/1",
                 Event.class);
@@ -647,7 +650,7 @@ public class EventControllerTest {
         Long attendeeId = legalAttendee.getId();
 
 
-        // Update the individual attendee on the given event
+        // Loob uue ja Uuendab osaleja dto objekti andmetega
         LegalAttendeeRequestDto updatedAttendeeDto = new LegalAttendeeRequestDto();
         updatedAttendeeDto.setCompanyName("Updated Name2");
         updatedAttendeeDto.setRegistrationCode(223243324L);

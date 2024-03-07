@@ -10,7 +10,7 @@ public class EventResponseDto {
     private Long id;
     private String name;
     private LocalDateTime time;
-    private LocationAddress locationAdress;
+    private LocationAddress locationAddress;
 
    private Long attendeesCount;
 

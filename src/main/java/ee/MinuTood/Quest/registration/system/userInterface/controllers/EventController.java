@@ -4,10 +4,7 @@ import ee.MinuTood.Quest.registration.system.application.interfaces.EventService
 import ee.MinuTood.Quest.registration.system.domain.event.Event;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.IndividualAttendee;
 import ee.MinuTood.Quest.registration.system.domain.event.entities.LegalAttendee;
-import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventRequestDto;
-import ee.MinuTood.Quest.registration.system.userInterface.dtos.EventResponseDto;
-import ee.MinuTood.Quest.registration.system.userInterface.dtos.IndividualAttendeeRequestDto;
-import ee.MinuTood.Quest.registration.system.userInterface.dtos.LegalAttendeeRequestDto;
+import ee.MinuTood.Quest.registration.system.userInterface.dtos.*;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
@@ -57,7 +54,7 @@ public class EventController {
             // Tagastab 201 Created vastused koos loodud üritusega
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(createdEvent);
+                    .body(new ApiResponse("Uus üritus on loodud"));
         } catch (ValidationException e) {
             // Logib valideerimise errorid servise levelil
 
@@ -193,40 +190,40 @@ public class EventController {
     }
 
     @DeleteMapping("/deleteEventById/{eventId}")
-    public ResponseEntity<String> deleteEventById(@PathVariable Long eventId) {
+    public ResponseEntity<ApiResponse> deleteEventById(@PathVariable Long eventId) {
         try {
             eventService.deleteEvent(eventId);
-            return ResponseEntity.ok("Üritus kustutatud edukalt");
+            return ResponseEntity.ok(new ApiResponse("Üritus kustutatud edukalt"));
         } catch (EntityNotFoundException e) {
             logger.error("Event not found with ID: " + eventId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
         } catch (Exception e) {
             logger.error("An error occurred while deleting event with ID: " + eventId, e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse("Internal Server Error"));
         }
     }
 
     @DeleteMapping("/events/{eventId}/individualAttendees/{attendeeId}")
-    public ResponseEntity<String> deleteIndividualAttendeeFromEvent(
+    public ResponseEntity<ApiResponse> deleteIndividualAttendeeFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long attendeeId) {
         try {
             eventService.deleteIndividualAttendeeByIdFromEventId(attendeeId, eventId);
-            return ResponseEntity.ok("Eraisikust Osavõtja kustutati edukalt");
+            return ResponseEntity.ok(new ApiResponse("Eraisikust Osavõtja kustutati edukalt"));
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
         }
     }
 
     @DeleteMapping("/events/{eventId}/legalAttendees/{attendeeId}")
-    public ResponseEntity<String> deleteLegalAttendeeFromEvent(
+    public ResponseEntity<ApiResponse> deleteLegalAttendeeFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long attendeeId) {
         try {
             eventService.deleteLegalAttendeeByIdFromEventId(attendeeId, eventId);
-            return ResponseEntity.ok("Ettevõttest Osavõtja kustutati edukalt");
+            return ResponseEntity.ok(new ApiResponse("Ettevõttest Osavõtja kustutati edukalt"));
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
         }
 
     }
@@ -245,7 +242,7 @@ public class EventController {
         }
         try {
             eventService.updateIndividualAttendeeByIdFromEventId(attendeeId, eventId, individualAttendeeRequestDto);
-            return ResponseEntity.ok("Eraisikust Osavõtja uuendati edukalt");
+            return ResponseEntity.ok(new ApiResponse("Eraisikust Osavõtja uuendati edukalt"));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -266,7 +263,7 @@ public class EventController {
         }
         try {
             eventService.updateLegalAttendeeByIdFromEventId(attendeeId, eventId, legalAttendeeRequestDto);
-            return ResponseEntity.ok("Ettevõttest Osavõtja uuendati edukalt");
+            return ResponseEntity.ok(new ApiResponse("Ettevõttest Osavõtja uuendati edukalt"));
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
