@@ -1,0 +1,11 @@
+# Use an official MySQL image as a base image
+FROM mysql:latest
+
+# Environment variables for MySQL
+ENV MYSQL_ROOT_PASSWORD Tanel
+ENV MYSQL_DATABASE questRegistrationSystem
+ENV MYSQL_USER Tanel
+ENV MYSQL_PASSWORD Tanel
+
+# Expose the MySQL port
+EXPOSE 3306

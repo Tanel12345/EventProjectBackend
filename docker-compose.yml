@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile-spring
+    image: my-java-app:latest  # Specify your custom image name and tag
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/questRegistrationSystem
+      SPRING_DATASOURCE_USERNAME: Tanel
+      SPRING_DATASOURCE_PASSWORD: Tanel
+
+  mysql:
+    build:
+      context: .
+      dockerfile: Dockerfile-mysql
+    image: my-mysql:latest  # Specify your custom image name and tag
+    ports:
+      - "3306:3306"  #Host ja container
+
+
+    environment:
+      MYSQL_ROOT_PASSWORD: Tanel
+      MYSQL_DATABASE: questRegistrationSystem
+      MYSQL_USER: Tanel
+      MYSQL_PASSWORD: Tanel
