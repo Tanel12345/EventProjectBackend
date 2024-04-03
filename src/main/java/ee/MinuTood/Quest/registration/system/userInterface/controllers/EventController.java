@@ -50,11 +50,12 @@ public class EventController {
         try {
             // Lisab DTO servicele, service teostab ülejäänud toimingud.
             EventResponseDto createdEvent = eventService.createEventWithoutAttendees(eventRequestDto);
-
+            ApiResponse apiResponse = new ApiResponse("Uus üritus on loodud");
+            apiResponse.setEventId(createdEvent.getId());
             // Tagastab 201 Created vastused koos loodud üritusega
             return ResponseEntity.status(HttpStatus.CREATED)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new ApiResponse("Uus üritus on loodud"));
+                    .body(apiResponse);
         } catch (ValidationException e) {
             // Logib valideerimise errorid servise levelil
 
@@ -70,7 +71,12 @@ public class EventController {
         }
     }
 
-    @GetMapping("/getAllEvents")
+    @GetMapping("/")
+    public String tervitus() {
+        return "<h1>Tere</h1>";
+    }
+
+        @GetMapping("/getAllEvents")
     public ResponseEntity<?> getAllEvents() {
 
         try {
@@ -203,7 +209,7 @@ public class EventController {
         }
     }
 
-    @DeleteMapping("/events/{eventId}/individualAttendees/{attendeeId}")
+    @DeleteMapping("/{eventId}/individualAttendees/{attendeeId}")
     public ResponseEntity<ApiResponse> deleteIndividualAttendeeFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long attendeeId) {
@@ -215,7 +221,7 @@ public class EventController {
         }
     }
 
-    @DeleteMapping("/events/{eventId}/legalAttendees/{attendeeId}")
+    @DeleteMapping("/{eventId}/legalAttendees/{attendeeId}")
     public ResponseEntity<ApiResponse> deleteLegalAttendeeFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long attendeeId) {
@@ -228,7 +234,7 @@ public class EventController {
 
     }
 
-    @PutMapping("/events/{eventId}/individualAttendees/{attendeeId}")
+    @PutMapping("/{eventId}/individualAttendees/{attendeeId}")
     public ResponseEntity<?> updateIndividualAttendeeFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long attendeeId, @Valid @RequestBody IndividualAttendeeRequestDto individualAttendeeRequestDto, BindingResult bindingResult) {
@@ -249,7 +255,7 @@ public class EventController {
     }
 
 
-    @PutMapping("/events/{eventId}/legalAttendees/{attendeeId}")
+    @PutMapping("/{eventId}/legalAttendees/{attendeeId}")
     public ResponseEntity<?> updateLegalAttendeeFromEvent(
             @PathVariable Long eventId,
             @PathVariable Long attendeeId, @Valid @RequestBody LegalAttendeeRequestDto legalAttendeeRequestDto, BindingResult bindingResult) {

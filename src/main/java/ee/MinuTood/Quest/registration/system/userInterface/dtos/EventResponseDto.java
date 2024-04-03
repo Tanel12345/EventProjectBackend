@@ -11,8 +11,7 @@ public class EventResponseDto {
     private String name;
     private LocalDateTime time;
     private LocationAddress locationAddress;
+    private Long attendeesCount;
 
-   private Long attendeesCount;
 
-    // Constructors, getters, and setters
 }

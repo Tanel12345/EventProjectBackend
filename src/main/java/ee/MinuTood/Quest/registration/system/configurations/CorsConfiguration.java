@@ -3,7 +3,6 @@ package ee.MinuTood.Quest.registration.system.configurations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
@@ -16,8 +15,7 @@ public class CorsConfiguration {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:4200")
-                        .allowedOrigins("http://ec2-3-77-203-148.eu-central-1.compute.amazonaws.com")
+                        .allowedOriginPatterns("*")
 
                         .allowedMethods("GET","POST","PUT", "DELETE")
 //                .allowedHeaders("header1", "header2", "header3")
